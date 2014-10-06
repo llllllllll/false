@@ -169,7 +169,9 @@ handleOpts :: ([Flag],[String],[String]) -> IO ()
 handleOpts (fs,f:_,_) = readFile f
                         >>= \cs -> case compile cs of
                                        Left e  -> error $ show e
-                                       Right c -> writeFile (getOut fs) c
+                                       Right c -> case getOut fs of
+                                                      "-" -> putStrLn c
+                                                      fl  -> writeFile fl c
 handleOpts (fs,_,_)
     | hasHelp fs    = printHelp
     | hasVersion fs = printVersion
