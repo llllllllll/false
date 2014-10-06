@@ -231,6 +231,7 @@ data Node = FuncNode Func
           | ValNode Int
           | VarNode Var
           | LambdaNode Lambda
+          | StringNode String
             deriving (Eq)
 
 
@@ -239,3 +240,4 @@ instance Show Node where
     show (ValNode n)    = show n
     show (VarNode v)    = show v
     show (LambdaNode l) = show l
+    show (StringNode s) = show s

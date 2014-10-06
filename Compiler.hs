@@ -4,6 +4,7 @@ module Main where
 
 import Control.Applicative ((<$>))
 import Control.Monad.ST (ST,runST,fixST)
+import Data.Char (ord)
 import Data.List (intercalate)
 import Data.STRef (STRef,newSTRef,readSTRef,modifySTRef')
 import System.Console.GetOpt (ArgOrder(..),OptDescr(..)
@@ -11,7 +12,8 @@ import System.Console.GetOpt (ArgOrder(..),OptDescr(..)
 import System.Environment (getArgs)
 
 import False.C (falseStr)
-import False.Data (Node(..),Func(..),Lambda(..),CompileError(..),initPosition)
+import False.Data (Node(..),Func(..),Lambda(..)
+                  ,CompileError(..),initPosition,Var(..))
 import False.Lexer (lexFalse)
 import False.Parser (parseFalse)
 
@@ -28,10 +30,11 @@ data PNode = PLambda Int
 
 
 instance Show PNode where
-    show (PLambda n)          = stackPush $ "(size_t) &lambda_" ++ show n
-    show (PNode (FuncNode f)) = callFunction $ funcToC f
-    show (PNode (ValNode n))  = stackPush $ show n
-    show (PNode (VarNode v))  = stackPush $ "(size_t) " ++ '&' : show v
+    show (PLambda n)               = stackPush $ "(size_t) &lambda_" ++ show n
+    show (PNode (FuncNode f))      = callFunction $ funcToC f
+    show (PNode (ValNode n))       = stackPush $ show n
+    show (PNode (VarNode (Var v))) = stackPush $ show $  ord v - ord 'a'
+    show (PNode (StringNode s))    = "puts(" ++ show s ++ ");"
 
 
 stack :: C
@@ -39,7 +42,7 @@ stack = "stack"
 
 
 stackPush :: String -> C
-stackPush n = callFunctionWithArgs "stackpush" [n]
+stackPush n = callFunctionWithArgs "f_stackpush" [n]
 
 
 callFunction :: C -> C
@@ -108,9 +111,9 @@ defLambda (n,ps) = "void lambda_" ++ show n ++ "(f_stack *stack){\n    "
 
 defMain :: [PNode] -> C
 defMain ps = "int main(int argc,char **argv){\n\
-             \    f_namespace ns;\n\
-             \    f_stack stack = malloc(sizeof(f_stack));\n\
-             \    f_init(ns,stack,argv);\n    " ++ writePNodes ps ++ "\n}"
+             \    f_stack *stack = malloc(sizeof(f_stack));\n\
+             \    f_init(namespace,stack,argv);\n    "
+                      ++ writePNodes ps ++ "\n    return 0;\n}"
 
 
 writePNodes :: [PNode] -> C
@@ -147,7 +150,7 @@ options = [ Option "h" ["help"] (NoArg Help) "Displays the help message"
 getOut :: [Flag] -> FilePath
 getOut fs = foldr (\a b -> case a of
                                OutputFile f -> f
-                               _            -> b) "a.out" fs
+                               _            -> b) "a.c" fs
 
 
 hasHelp :: [Flag] -> Bool
@@ -166,7 +169,7 @@ handleOpts :: ([Flag],[String],[String]) -> IO ()
 handleOpts (fs,f:_,_) = readFile f
                         >>= \cs -> case compile cs of
                                        Left e  -> error $ show e
-                                       Right c -> appendFile (getOut fs) c
+                                       Right c -> writeFile (getOut fs) c
 handleOpts (fs,_,_)
     | hasHelp fs    = printHelp
     | hasVersion fs = printVersion
@@ -174,3 +177,7 @@ handleOpts (fs,_,_)
   where
       printHelp    = putStrLn $ "Usage:\n" ++ usageInfo "" options
       printVersion = putStrLn version
+
+
+main :: IO ()
+main = getArgs >>= \as -> handleOpts (getOpt RequireOrder options as)

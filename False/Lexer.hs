@@ -13,7 +13,7 @@ module False.Lexer
     ) where
 
 
-import Data.Char (isLetter,isNumber,isSpace)
+import Data.Char (isLower,isNumber,isSpace)
 import Data.List (genericLength)
 import Control.Applicative ((<$>))
 
@@ -35,7 +35,8 @@ lexFalse p ('\n':cs)   = lexFalse          (newLine p)         cs
 lexFalse p ('{':cs)    = lexComment p (incrPosition p)    cs
 lexFalse p ('[':cs)    = ((:) (TLambdaStart p)) <$> lexFalse (incrPosition p) cs
 lexFalse p (']':cs)    = ((:) (TLambdaEnd   p)) <$> lexFalse (incrPosition p) cs
-lexFalse p ('"':cs)    = lexString "" p             (incrPosition p) cs
+lexFalse p ('"':cs)    = (\(TString s:rs) -> TString (reverse s) : rs)
+                         <$> lexString "" p             (incrPosition p) cs
 lexFalse p "'"         = Left (NoCharToQuote,p)
 lexFalse p ('\'':c:cs) = ((:) (TQuoted c))      <$> lexFalse (incrPosition p) cs
 lexFalse p ('+':cs)    = ((:) TAdd)             <$> lexFalse (incrPosition p) cs
@@ -63,7 +64,7 @@ lexFalse p (',':cs)    = ((:) TPrintC)          <$> lexFalse (incrPosition p) cs
 lexFalse p ('^':cs)    = ((:) TInput)           <$> lexFalse (incrPosition p) cs
 lexFalse p ('ß':cs)    = ((:) TFlush)           <$> lexFalse (incrPosition p) cs
 lexFalse p w@(c:cs)
-    | isLetter c       = ((:) (TVar c))         <$> lexFalse (incrPosition p) cs
+    | isLower c        = ((:) (TVar c))         <$> lexFalse (incrPosition p) cs
     | isSpace  c       = lexFalse (incrPosition p) cs
     | isNumber c       = lexVal                 p  w
     | otherwise        = Left (UnexpectedChar c,p)  -- Not sure what this is.

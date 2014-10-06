@@ -61,6 +61,7 @@ parseFalse (TInput:ts)    = ((:) (FuncNode FInput))  <$> parseFalse ts
 parseFalse (TFlush:ts)    = ((:) (FuncNode FFlush))  <$> parseFalse ts
 parseFalse (TVar c:ts)    = ((:) (VarNode (Var c)))  <$> parseFalse ts
 parseFalse (TVal n:ts)    = ((:) (ValNode n))        <$> parseFalse ts
+parseFalse (TString s:ts) = ((:) (StringNode s))     <$> parseFalse ts
 
 
 
