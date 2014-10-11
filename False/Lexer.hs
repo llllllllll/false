@@ -18,7 +18,7 @@ import Data.List (genericLength)
 import Control.Applicative ((<$>))
 
 
-import False.Data (Token(..)
+import False.Core (Token(..)
                   ,LexError(..)
                   ,Position(..)
                   ,incrPosition
@@ -33,38 +33,38 @@ lexFalse :: Position Int Int -> String
 lexFalse p ""          = Right []
 lexFalse p ('\n':cs)   = lexFalse          (newLine p)         cs
 lexFalse p ('{':cs)    = lexComment p (incrPosition p)    cs
-lexFalse p ('[':cs)    = ((:) (TLambdaStart p)) <$> lexFalse (incrPosition p) cs
-lexFalse p (']':cs)    = ((:) (TLambdaEnd   p)) <$> lexFalse (incrPosition p) cs
+lexFalse p ('[':cs)    = (:) (TLambdaStart p) <$> lexFalse (incrPosition p) cs
+lexFalse p (']':cs)    = (:) (TLambdaEnd   p) <$> lexFalse (incrPosition p) cs
 lexFalse p ('"':cs)    = (\(TString s:rs) -> TString (reverse s) : rs)
                          <$> lexString "" p             (incrPosition p) cs
 lexFalse p "'"         = Left (NoCharToQuote,p)
-lexFalse p ('\'':c:cs) = ((:) (TQuoted c))      <$> lexFalse (incrPosition p) cs
-lexFalse p ('+':cs)    = ((:) TAdd)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('-':cs)    = ((:) TSub)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('*':cs)    = ((:) TMul)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('/':cs)    = ((:) TDiv)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('_':cs)    = ((:) TNeg)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('=':cs)    = ((:) TEq)              <$> lexFalse (incrPosition p) cs
-lexFalse p ('>':cs)    = ((:) TGt)              <$> lexFalse (incrPosition p) cs
-lexFalse p ('~':cs)    = ((:) TNot)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('&':cs)    = ((:) TAnd)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('|':cs)    = ((:) TOr)              <$> lexFalse (incrPosition p) cs
-lexFalse p (':':cs)    = ((:) TAssign)          <$> lexFalse (incrPosition p) cs
-lexFalse p (';':cs)    = ((:) TRead)            <$> lexFalse (incrPosition p) cs
-lexFalse p ('!':cs)    = ((:) TApply)           <$> lexFalse (incrPosition p) cs
-lexFalse p ('$':cs)    = ((:) TDup)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('%':cs)    = ((:) TDel)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('\\':cs)   = ((:) TSwap)            <$> lexFalse (incrPosition p) cs
-lexFalse p ('@':cs)    = ((:) TRot)             <$> lexFalse (incrPosition p) cs
-lexFalse p ('ø':cs)    = ((:) TPick)            <$> lexFalse (incrPosition p) cs
-lexFalse p ('?':cs)    = ((:) TIf)              <$> lexFalse (incrPosition p) cs
-lexFalse p ('#':cs)    = ((:) TWhile)           <$> lexFalse (incrPosition p) cs
-lexFalse p ('.':cs)    = ((:) TPrintI)          <$> lexFalse (incrPosition p) cs
-lexFalse p (',':cs)    = ((:) TPrintC)          <$> lexFalse (incrPosition p) cs
-lexFalse p ('^':cs)    = ((:) TInput)           <$> lexFalse (incrPosition p) cs
-lexFalse p ('ß':cs)    = ((:) TFlush)           <$> lexFalse (incrPosition p) cs
+lexFalse p ('\'':c:cs) = (:) (TQuoted c)      <$> lexFalse (incrPosition p) cs
+lexFalse p ('+':cs)    = (:) TAdd             <$> lexFalse (incrPosition p) cs
+lexFalse p ('-':cs)    = (:) TSub             <$> lexFalse (incrPosition p) cs
+lexFalse p ('*':cs)    = (:) TMul             <$> lexFalse (incrPosition p) cs
+lexFalse p ('/':cs)    = (:) TDiv             <$> lexFalse (incrPosition p) cs
+lexFalse p ('_':cs)    = (:) TNeg             <$> lexFalse (incrPosition p) cs
+lexFalse p ('=':cs)    = (:) TEq              <$> lexFalse (incrPosition p) cs
+lexFalse p ('>':cs)    = (:) TGt              <$> lexFalse (incrPosition p) cs
+lexFalse p ('~':cs)    = (:) TNot             <$> lexFalse (incrPosition p) cs
+lexFalse p ('&':cs)    = (:) TAnd             <$> lexFalse (incrPosition p) cs
+lexFalse p ('|':cs)    = (:) TOr              <$> lexFalse (incrPosition p) cs
+lexFalse p (':':cs)    = (:) TAssign          <$> lexFalse (incrPosition p) cs
+lexFalse p (';':cs)    = (:) TRead            <$> lexFalse (incrPosition p) cs
+lexFalse p ('!':cs)    = (:) TApply           <$> lexFalse (incrPosition p) cs
+lexFalse p ('$':cs)    = (:) TDup             <$> lexFalse (incrPosition p) cs
+lexFalse p ('%':cs)    = (:) TDel             <$> lexFalse (incrPosition p) cs
+lexFalse p ('\\':cs)   = (:) TSwap            <$> lexFalse (incrPosition p) cs
+lexFalse p ('@':cs)    = (:) TRot             <$> lexFalse (incrPosition p) cs
+lexFalse p ('ø':cs)    = (:) TPick            <$> lexFalse (incrPosition p) cs
+lexFalse p ('?':cs)    = (:) TIf              <$> lexFalse (incrPosition p) cs
+lexFalse p ('#':cs)    = (:) TWhile           <$> lexFalse (incrPosition p) cs
+lexFalse p ('.':cs)    = (:) TPrintI          <$> lexFalse (incrPosition p) cs
+lexFalse p (',':cs)    = (:) TPrintC          <$> lexFalse (incrPosition p) cs
+lexFalse p ('^':cs)    = (:) TInput           <$> lexFalse (incrPosition p) cs
+lexFalse p ('ß':cs)    = (:) TFlush           <$> lexFalse (incrPosition p) cs
 lexFalse p w@(c:cs)
-    | isLower c        = ((:) (TVar c))         <$> lexFalse (incrPosition p) cs
+    | isLower c        = (:) (TVar c)         <$> lexFalse (incrPosition p) cs
     | isSpace  c       = lexFalse (incrPosition p) cs
     | isNumber c       = lexVal                 p  w
     | otherwise        = Left (UnexpectedChar c,p)  -- Not sure what this is.
@@ -86,7 +86,7 @@ lexComment o p (_:cs)    = lexComment o (incrPosition p) cs
 lexString :: String -> Position Int Int -> Position Int Int
           -> String -> Either (LexError,Position Int Int) [Token]
 lexString as o p ""        = Left (StringNotClosed,o)
-lexString as o p ('"':cs)  = ((:) (TString as)) <$> lexFalse (incrPosition p) cs
+lexString as o p ('"':cs)  = (:) (TString as) <$> lexFalse (incrPosition p) cs
 lexString as o p ('\n':cs) = lexString ('\n':as) o     (newLine      p) cs
 lexString as o p (c:cs)    = lexString (c:as)    o     (incrPosition p) cs
 
@@ -95,5 +95,5 @@ lexString as o p (c:cs)    = lexString (c:as)    o     (incrPosition p) cs
 lexVal :: Position Int Int -> String
        -> Either (LexError,Position Int Int) [Token]
 lexVal p cs = let (v,rs) = span isNumber cs
-              in ((:) (TVal (read v)))
+              in (:) (TVal (read v))
                      <$> lexFalse (incrNPosition p (genericLength v)) rs

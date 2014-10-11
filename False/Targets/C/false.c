@@ -46,7 +46,6 @@ void f_init(f_namespace ns,f_stack *stack,char **argv){
 }
 
 
-
 void f_add(f_stack *stack){
     size_t a;
     size_t b;
@@ -141,7 +140,7 @@ void f_assign(f_stack *stack){    size_t a;
     stack->cur -= sizeof(size_t);
     b = *stack->cur;
     stack->cur -= sizeof(size_t);
-    namespace[a]= b;
+    namespace[a] = b;
 }
 
 
@@ -220,14 +219,12 @@ void f_if(f_stack *stack){
 void f_while(f_stack *stack){
     f_lambda *cond;
     f_lambda *body;
-    size_t a;
     cond = (f_lambda*) *stack->cur;
     stack->cur -= sizeof(size_t);
     body = (f_lambda*) *stack->cur;
     stack->cur -= sizeof(size_t);
     cond(stack);
-    a = *stack->cur;
-    while (a){
+    while (*stack->cur){
         body(stack);
         cond(stack);
         stack->cur -= sizeof(size_t);

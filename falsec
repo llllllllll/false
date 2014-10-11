@@ -1,8 +1,202 @@
-#!/usr/bin/bash
-if [ $# -eq 0 ];then
-    echo "Usage: INPUT [OPTIONS]"
-    exit -1
-fi
-in=$1
-shift
-f2c -o - $in | cc -x c $@ -
+#!/usr/bin/python3
+from argparse import ArgumentParser
+from io import StringIO
+from subprocess import Popen, PIPE, DEVNULL
+import sys
+from sys import stderr
+from tempfile import NamedTemporaryFile
+
+
+class Exectuable(object):
+    """
+    An exectuble from the shell.
+    """
+    def __init__(self, name):
+        self._name = name
+
+    def __call__(self, *args, **kwargs):
+        stdin = kwargs.get('stdin')
+
+        prefix = ("echo %s | " % stdin) if stdin else ""
+        command = '%s%s %s' % (prefix, self._name, ' '.join(args))
+        proc = Popen(
+            command,
+            shell=True,
+            stdin=DEVNULL,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        proc.wait()
+
+        return proc.stdout.read(), proc.stderr.read(), proc.returncode
+
+
+# The binaries we will be using.
+f2 = Exectuable('f2')
+cc = Exectuable('cc')
+nasm = Exectuable('nasm')
+
+
+
+DEFAULT_FILES = {
+    'c': 'a.c',
+    'nasm': 'a.asm',
+    'default': 'a.out'
+}
+
+
+# A mapping of a canonical target to a set of aliases.
+TARGET_ALIASES = {
+    'nasm': {
+        'asm',
+    },
+    'c': set(),
+}
+
+def get_output_file(intermediate, target, output):
+    """
+    Return the output file for the given target types.
+    """
+    if output:
+        return output
+    else:
+        if not intermediate:
+            target = 'default'
+
+        return DEFAULT_FILES[target]
+
+
+def normalize_target(proposed_target):
+    """
+    Convert a target to the canonical form.
+    """
+    proposed_target = proposed_target.lower()
+    for target, aliases in TARGET_ALIASES.items():
+        if proposed_target == target:
+            return target
+
+        for alias in aliases:
+            if proposed_target == 'alias':
+                return alias
+
+    raise ValueError(proposed_target + ' is not a valid target')
+
+
+
+def to_intermediate(target, output_file):
+    """
+    Runs only the top level compiler (f2) to generate intermediate
+    output of the given target.
+    """
+    out, err, status = f2('-x', target, '-o', output_file)
+
+    if out:
+        print(out)
+    if err:
+        print(err, file=stderr)
+
+    return status
+
+
+def to_binary(target, input_file, output_file):
+    """
+    Compile the file to a binary file through the target route.
+    """
+    # write to stdout by passing output file of '-'
+    out, err, status = f2('-x', target, '-o', '-', input_file)
+
+    if status:
+        if out:
+            print(out)
+        if err:
+            print(err, file=stderr)
+        return status
+
+    return globals()['to_binary_' + target](out, output_file)
+
+
+def to_binary_nasm(src, output_file):
+    """
+    Compiles a binary through the nasm route.
+    """
+    with NamedTemporaryFile() as f, \
+         NamedTemporaryFile(suffix='.o') as object_file:
+        f.write(src)
+        f.flush()
+
+        _, err, status = nasm('-felf64', '-o', object_file.name, f.name)
+
+        if status:
+            if err:
+                print(err, file=stderr)
+            return -1
+
+        _, err, status = cc('-o', output_file, object_file.name)
+
+    if err:
+        print(err, file=stderr)
+
+    return status
+
+
+def to_binary_c(src, output_file):
+    """
+    Compiles a binary through the c route.
+    """
+    _, err, status = cc('-x', 'c', '-o', output_file, '-', stdin=src)
+
+    if err:
+        print(err, file=stderr)
+
+    return status
+
+
+def main(argv):
+    parser = ArgumentParser('False Compiler')
+    parser.add_argument(
+        '-o',
+        metavar='OUT',
+        type=str,
+        help='The name of the output file',
+    )
+    parser.add_argument(
+        '-x',
+        metavar='TARGET',
+        type=str,
+        help='The target output',
+        default='nasm',
+    )
+    parser.add_argument(
+        '-s',
+        action='store_true',
+        help='Stop at intermediate output',
+        default=False,
+    )
+    parser.add_argument(
+        'infile',
+        metavar='IN',
+        nargs='?',
+        help='The false source file to read from',
+    )
+    args = vars(parser.parse_args(argv[1:]))
+
+    infile = args.get('infile')
+    if not infile:
+        print(argv[0] + ': No input file specified', file=stderr)
+        return -1
+
+    try:
+        args['x'] = normalize_target(args['x'])
+    except ValueError as v:
+        print(str(v), file=stderr)
+        return -1
+
+    output_file = get_output_file(args['s'], args['x'], args.get('o'))
+    if args['s']:
+        return to_intermediate(args['x'], infile, output_file)
+    else:
+        return to_binary(args['x'], infile, output_file)
+
+
+if __name__ == '__main__':
+    main(sys.argv)

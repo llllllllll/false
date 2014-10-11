@@ -1,5 +1,5 @@
 -- |
--- Module      : False.Data
+-- Module      : False.Core
 -- Copyright   : Joe Jevnik
 --
 -- License     : GPL-2
@@ -8,7 +8,8 @@
 -- Portability : GHC
 --
 -- False data structures.
-module False.Data
+{-# LANGUAGE RankNTypes, TypeFamilies #-}
+module False.Core
     ( Position(..)     -- :: Instances: Eq, Show
     , Token(..)        -- :: Instances: Eq, Show
     , CompileError(..) -- :: Instances: Eq, Show
@@ -18,6 +19,8 @@ module False.Data
     , Var(..)          -- :: Instances: Eq, Show
     , Lambda(..)       -- :: Instances: Eq, Show
     , Node(..)         -- :: Instances: Eq, Show
+    , PNode(..)
+    , Target(..)
     , initPosition     -- :: (Integral a,Integral b) => Position a b
     , incrPosition     -- :: (Integral a,Integral b) => Position a b
                        --                            -> Position a b
@@ -26,9 +29,6 @@ module False.Data
     , newLine          -- :: (Integral a,Integral b) => Position a b
                        --                            -> Position a b
     ) where
-
-
-import Language.Haskell.TH
 
 
 data Position a b = Position a b deriving (Eq)
@@ -56,12 +56,14 @@ newLine (Position r c) = Position (r + 1) 0
 
 data CompileError = CompileLexError LexError (Position Int Int)
                   | CompileParseError ParseError
+                  | InvalidTarget String
                     deriving (Eq)
 
 
 instance Show CompileError where
     show (CompileLexError e p) = show e ++ ": " ++ show p
     show (CompileParseError e) = show e
+    show (InvalidTarget t)     = "Invalid target: " ++ show t ++ "\""
 
 
 data ParseError = LambdaNotClosed (Position Int Int)
@@ -241,3 +243,17 @@ instance Show Node where
     show (VarNode v)    = show v
     show (LambdaNode l) = show l
     show (StringNode s) = show s
+
+
+
+-- | A preprocessed node. These are ready to be output to a target lang.
+data PNode = PLambda Int
+           | PString Int String
+           | PNode Node
+
+
+-- | The target languages.
+data Target = Target { compile     :: [(Int,String)] -> [(Int,[PNode])]
+                                   -> [PNode] -> String
+                     , defaultFile :: FilePath
+                     }
