@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from io import StringIO
 from subprocess import Popen, PIPE, DEVNULL
 import sys
 from sys import stderr
@@ -39,7 +38,6 @@ cc = Exectuable('cc')
 nasm = Exectuable('nasm')
 
 
-
 DEFAULT_FILES = {
     'c': 'a.c',
     'nasm': 'a.asm',
@@ -54,6 +52,7 @@ TARGET_ALIASES = {
     },
     'c': set(),
 }
+
 
 def get_output_file(intermediate, target, output):
     """
@@ -82,7 +81,6 @@ def normalize_target(proposed_target):
                 return alias
 
     raise ValueError(proposed_target + ' is not a valid target')
-
 
 
 def to_intermediate(target, input_file, output_file):
@@ -122,7 +120,7 @@ def to_binary_nasm(src, output_file):
     Compiles a binary through the nasm route.
     """
     with NamedTemporaryFile() as f, \
-         NamedTemporaryFile(suffix='.o') as object_file:
+            NamedTemporaryFile(suffix='.o') as object_file:
         f.write(src)
         f.flush()
 
