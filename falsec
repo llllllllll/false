@@ -28,7 +28,9 @@ class Exectuable(object):
         )
         proc.wait()
 
-        return proc.stdout.read(), proc.stderr.read(), proc.returncode
+        return (proc.stdout.read().decode('ascii'),
+                proc.stderr.read().decode('ascii'),
+                proc.returncode)
 
 
 # The binaries we will be using.
@@ -83,12 +85,12 @@ def normalize_target(proposed_target):
 
 
 
-def to_intermediate(target, output_file):
+def to_intermediate(target, input_file, output_file):
     """
     Runs only the top level compiler (f2) to generate intermediate
     output of the given target.
     """
-    out, err, status = f2('-x', target, '-o', output_file)
+    out, err, status = f2('-x', target, '-o', output_file, input_file)
 
     if out:
         print(out)

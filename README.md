@@ -1,9 +1,26 @@
-# false #
+# falsec #
 
-A top level compiler for false targeting C.
+A False compiler for x86_64.
 
-Use f2c to generate C files from false files to then be compiled with your
-favorite C compiler.
+## f2 ##
 
-The `falsec` script automagically does this. This script forwards the arguments
-along to cc.
+`f2` is the actual top-level compiler from false to the target intermediate
+language. By default, `nasm` is used as the intermediate language.
+
+The options currently are:
+
+- `nasm`
+- `c`
+
+Hopefully more will be added for fun.
+
+
+## falsec frontend ##
+
+`falsec` is a python script that turns `f2` into an end to end compiler for
+false. This manages the creation of intermediate files or pipes to produce a
+final binary through the target route desired. It allows for the same targets as
+`f2`.
+
+`falsec` also allows for intermediate output, or just passing through the output
+of `f2`. This makes falsec the desired user endpoint.

@@ -41,7 +41,7 @@ getTarget = foldr (\a b -> case a of
                                TargetOpt t -> parseTarget t
                                _           -> b) (Right asmTarget)
   where
-      parseTarget "c "   = Right cTarget
+      parseTarget "c"    = Right cTarget
       parseTarget "nasm" = Right asmTarget
       parseTarget t      = Left $ InvalidTarget t
 
