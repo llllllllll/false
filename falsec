@@ -6,6 +6,13 @@ from sys import stderr
 from tempfile import NamedTemporaryFile
 
 
+def eprint(msg):
+    """
+    Print to stderr, append argv[0] to the front of the msg.
+    """
+    print('%s: %s' % (sys.argv[0], msg), file=stderr)
+
+
 class Exectuable(object):
     """
     An exectuble from the shell.
@@ -93,7 +100,7 @@ def to_intermediate(target, input_file, output_file):
     if out:
         print(out)
     if err:
-        print(err, file=stderr)
+        eprint(err)
 
     return status
 
@@ -109,7 +116,7 @@ def to_binary(target, input_file, output_file):
         if out:
             print(out)
         if err:
-            print(err, file=stderr)
+            eprint(err)
         return status
 
     return globals()['to_binary_' + target](out, output_file)
@@ -128,7 +135,7 @@ def to_binary_nasm(src, output_file):
 
         if status:
             if err:
-                print(err, file=stderr)
+                eprint(err)
             return -1
 
         _, err, status = cc('-o', output_file, object_file.name)
@@ -146,7 +153,7 @@ def to_binary_c(src, output_file):
     _, err, status = cc('-x', 'c', '-o', output_file, '-', stdin=src)
 
     if err:
-        print(err, file=stderr)
+        eprint(err)
 
     return status
 
@@ -182,13 +189,13 @@ def main(argv):
 
     infile = args.get('infile')
     if not infile:
-        print(argv[0] + ': No input file specified', file=stderr)
+        eprint('no input file specified')
         return -1
 
     try:
         args['x'] = normalize_target(args['x'])
     except ValueError as v:
-        print(str(v), file=stderr)
+        eprint(str(v))
         return -1
 
     output_file = get_output_file(args['s'], args['x'], args.get('o'))
