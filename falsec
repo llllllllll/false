@@ -128,7 +128,7 @@ def to_binary_nasm(src, output_file):
     """
     with NamedTemporaryFile() as f, \
             NamedTemporaryFile(suffix='.o') as object_file:
-        f.write(src)
+        f.write(src.encode('utf-8'))
         f.flush()
 
         _, err, status = nasm('-felf64', '-o', object_file.name, f.name)
