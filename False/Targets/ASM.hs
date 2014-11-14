@@ -27,6 +27,7 @@ module False.Targets.ASM
 
 import Control.Applicative ((<$>))
 import Control.Monad.ST (ST,runST)
+import Control.Parallel.Strategies (parMap,rseq)
 import Data.Char (ord)
 import Data.List (intercalate)
 import Data.STRef (STRef,newSTRef,readSTRef,modifySTRef')
@@ -201,7 +202,7 @@ asmCompile ss ls ms
                                    : Label (Just (DQ,"0")) "lsp"
                                    : (ss >>= declString)
                              es  = [ Extern "snprintf" ]
-                         in return $ intercalate "\n" $ map show
+                         in return $ intercalate "\n" $ parMap rseq show
                                 $ asmCompile' es ss' ls' ms')
 
 
@@ -221,7 +222,7 @@ declVars :: [ASM]
 declVars = Label (Just (RESQ,show stackSize)) "lstack"
            : Label (Just (RESD,"1")) "io"
            : Label (Just (RESB,"64")) "pb"
-           : map (Label (Just (RESQ,"1")) . flip (:) []) ['a'..'z']
+           : parMap rseq (Label (Just (RESQ,"1")) . flip (:) []) ['a'..'z']
 
 
 declString :: (Int,String) -> [ASM]

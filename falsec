@@ -150,7 +150,11 @@ def to_binary_c(src, output_file):
     """
     Compiles a binary through the c route.
     """
-    _, err, status = cc('-x', 'c', '-o', output_file, '-', stdin=src)
+    with NamedTemporaryFile() as f, \
+            NamedTemporaryFile(suffix='.o') as object_file:
+        f.write(src.encode('utf-8'))
+        f.flush()
+        _, err, status = cc('-x', 'c', '-o', output_file, f.name)
 
     if err:
         eprint(err)

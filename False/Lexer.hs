@@ -31,8 +31,8 @@ import False.Core (Token(..)
 lexFalse :: Position Int Int -> String
          -> Either (LexError,Position Int Int) [Token]
 lexFalse p ""          = Right []
-lexFalse p ('\n':cs)   = lexFalse          (newLine p)         cs
-lexFalse p ('{':cs)    = lexComment p (incrPosition p)    cs
+lexFalse p ('\n':cs)   = lexFalse          (newLine p) cs
+lexFalse p ('{':cs)    = lexComment p (incrPosition p) cs
 lexFalse p ('[':cs)    = (:) (TLambdaStart p) <$> lexFalse (incrPosition p) cs
 lexFalse p (']':cs)    = (:) (TLambdaEnd   p) <$> lexFalse (incrPosition p) cs
 lexFalse p ('"':cs)    = (\(TString s:rs) -> TString (reverse s) : rs)

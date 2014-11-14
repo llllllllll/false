@@ -25,6 +25,7 @@ module False.Targets.C
 
 
 import Control.Applicative ((<$>))
+import Control.Parallel.Strategies (parMap,rseq)
 import Data.Char (ord)
 import Data.List (intercalate)
 
@@ -43,7 +44,7 @@ cTarget = Target { compile     = cCompile
 
 
 cCompile :: [(Int,String)] -> [(Int,[PNode])] -> [PNode] -> String
-cCompile _ ls ms = let ls' = map defLambda $ reverse ls
+cCompile _ ls ms = let ls' = parMap rseq defLambda $ reverse ls
                        ms' = defMain ms
                    in intercalate "\n\n\n" $ falseStr : ls' ++ [ms']
 
@@ -110,4 +111,4 @@ defMain ps = "int main(int argc,char **argv){\n\
 
 
 writePNodes :: [PNode] -> C
-writePNodes ps = intercalate "\n    " $ map cToTarget ps
+writePNodes ps = intercalate "\n    " $ parMap rseq cToTarget ps
