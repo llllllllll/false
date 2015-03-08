@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from argparse import ArgumentParser
+from functools import lru_cache
 from subprocess import Popen, PIPE, DEVNULL
 import sys
 from sys import stderr
@@ -20,8 +21,7 @@ class Exectuable(object):
     def __init__(self, name):
         self._name = name
 
-    def __call__(self, *args, **kwargs):
-        stdin = kwargs.get('stdin')
+    def __call__(self, *args, stdin=None):
 
         prefix = ("echo %s | " % stdin) if stdin else ""
         command = '%s%s %s' % (prefix, self._name, ' '.join(args))
@@ -34,15 +34,15 @@ class Exectuable(object):
         )
         proc.wait()
 
-        return (proc.stdout.read().decode('ascii'),
-                proc.stderr.read().decode('ascii'),
+        return (proc.stdout.read(),
+                proc.stderr.read(),
                 proc.returncode)
 
 
-# The binaries we will be using.
-f2 = Exectuable('f2')
-cc = Exectuable('cc')
-nasm = Exectuable('nasm')
+# The shell's namespace for accessing `Executables`.
+shell = type('shell', (object,), {
+    '__getattr__': lru_cache()(lambda self, name: Exectuable(name)),
+})()
 
 
 DEFAULT_FILES = {
@@ -95,7 +95,7 @@ def to_intermediate(target, input_file, output_file):
     Runs only the top level compiler (f2) to generate intermediate
     output of the given target.
     """
-    out, err, status = f2('-x', target, '-o', output_file, input_file)
+    out, err, status = shell.f2('-x', target, '-o', output_file, input_file)
 
     if out:
         print(out)
@@ -110,7 +110,7 @@ def to_binary(target, input_file, output_file):
     Compile the file to a binary file through the target route.
     """
     # write to stdout by passing output file of '-'
-    out, err, status = f2('-x', target, '-o', '-', input_file)
+    out, err, status = shell.f2('-x', target, '-o', '-', input_file)
 
     if status:
         if out:
@@ -128,17 +128,17 @@ def to_binary_nasm(src, output_file):
     """
     with NamedTemporaryFile() as f, \
             NamedTemporaryFile(suffix='.o') as object_file:
-        f.write(src.encode('utf-8'))
+        f.write(src)
         f.flush()
 
-        _, err, status = nasm('-felf64', '-o', object_file.name, f.name)
+        _, err, status = shell.nasm('-felf64', '-o', object_file.name, f.name)
 
         if status:
             if err:
                 eprint(err)
             return -1
 
-        _, err, status = cc('-o', output_file, object_file.name)
+        _, err, status = shell.cc('-o', output_file, object_file.name)
 
     if err:
         print(err, file=stderr)
@@ -150,14 +150,13 @@ def to_binary_c(src, output_file):
     """
     Compiles a binary through the c route.
     """
-    with NamedTemporaryFile() as f, \
-            NamedTemporaryFile(suffix='.o') as object_file:
-        f.write(src.encode('utf-8'))
+    with NamedTemporaryFile() as f:
+        f.write(src)
         f.flush()
-        _, err, status = cc('-x', 'c', '-o', output_file, f.name)
+        _, err, status = shell.cc('-x', 'c', '-o', output_file, f.name)
 
     if err:
-        eprint(err)
+        eprint(err.decode('utf-8'))
 
     return status
 
