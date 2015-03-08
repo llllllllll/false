@@ -19,6 +19,7 @@ All the operators are function that mutate a single f_stack.
 -}
 
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
 module False.Targets.C
     ( cTarget  -- :: Target
     ) where
@@ -29,9 +30,8 @@ import Control.Parallel.Strategies (parMap,rseq)
 import Data.Char (ord)
 import Data.List (intercalate)
 
-
-import False.Targets.C.Operations (falseStr)
 import False.Core (PNode(..),Target(..),Func(..),Node(..),Var(..))
+import False.Targets.C.QQ (include)
 
 
 type C = String
@@ -46,7 +46,8 @@ cTarget = Target { compile     = cCompile
 cCompile :: [(Int,String)] -> [(Int,[PNode])] -> [PNode] -> String
 cCompile _ ls ms = let ls' = parMap rseq defLambda $ reverse ls
                        ms' = defMain ms
-                   in intercalate "\n\n\n" $ falseStr : ls' ++ [ms']
+                   in intercalate "\n\n\n"
+                          $ [include|False/Targets/C/false.c|] : ls' ++ [ms']
 
 
 cToTarget :: PNode -> C
@@ -55,7 +56,6 @@ cToTarget (PNode (ValNode n))       = stackPush $ show n
 cToTarget (PNode (VarNode (Var v))) = stackPush $ show $ ord v - ord 'a'
 cToTarget (PString _ s)             = "puts(" ++ show s ++ ");"
 cToTarget (PLambda n)               = stackPush $ "(size_t) &lambda_" ++ show n
-
 
 
 stackPush :: String -> C
@@ -107,7 +107,8 @@ defMain :: [PNode] -> C
 defMain ps = "int main(int argc,char **argv){\n\
              \    f_stack *stack = malloc(sizeof(f_stack));\n\
              \    f_init(namespace,stack,argv);\n    "
-                      ++ writePNodes ps ++ "\n    return 0;\n}"
+                      ++ writePNodes ps
+                      ++ "\n    free(f_stack);    return 0;\n}"
 
 
 writePNodes :: [PNode] -> C

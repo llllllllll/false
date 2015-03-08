@@ -12,8 +12,6 @@ typedef struct{
 typedef void f_lambda(f_stack*);
 typedef size_t f_namespace[26];
 
-static f_namespace namespace;
-
 
 void f_stackinit(f_stack *stack){
     stack->first = malloc(sizeof(size_t) * 1024);
@@ -164,7 +162,6 @@ void f_dup(f_stack *stack){
 void f_del(f_stack *stack){
     stack->cur -= sizeof(size_t);
 }
-
 
 
 void f_swap(f_stack *stack){
