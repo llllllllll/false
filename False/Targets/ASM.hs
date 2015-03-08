@@ -34,7 +34,6 @@ import Data.STRef (STRef,newSTRef,readSTRef,modifySTRef')
 import Numeric (showHex)
 
 
-import False.Targets.C.Operations (falseStr)
 import False.Core (PNode(..),Target(..),Func(..),Node(..),Var(..))
 
 
