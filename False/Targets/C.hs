@@ -108,7 +108,7 @@ defMain ps = "int main(int argc,char **argv){\n\
              \    f_stack *stack = malloc(sizeof(f_stack));\n\
              \    f_init(namespace,stack,argv);\n    "
                       ++ writePNodes ps
-                      ++ "\n    free(f_stack);    return 0;\n}"
+                      ++ "\n    free(stack);    return 0;\n}"
 
 
 writePNodes :: [PNode] -> C
